@@ -1,1 +1,499 @@
-telepack ui webpage
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Telepack — 8" Tablet Portrait Prototype</title>
+
+  <style>
+    /* Colors and spacing */
+    :root{
+      --bg-light-blue: #dff6ff;      /* screen background (light blue) */
+      --tile-bg: #fff9b8;            /* light yellow button background */
+      --tile-text: #07293d;          /* dark text for contrast */
+      --muted: #345a6b;
+      --accent: #1fb6ff;
+      --danger: #ff6b6b;
+
+      /* Physical sizing for an 8" tablet (portrait) with 4:3 aspect ratio:
+         portrait width = 4.8in, height = 6.4in to simulate physical size in browser */
+      --device-width: 4.8in;
+      --device-height: 6.4in;
+
+      /* Gap between tiles exactly 1/4 inch as requested */
+      --gap: 0.25in;
+      --menu-padding: 0.125in;
+      --bezel: 0.25in; /* outer bezel thickness */
+    }
+
+    /* Page background and centering */
+    html,body {
+      height:100%;
+      margin:0;
+      background: #e9edf0; /* neutral page background so the device stands out */
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      box-sizing:border-box;
+    }
+
+    /* Device mockup (fixed physical size using inch units) */
+    .device {
+      width: var(--device-width);
+      height: var(--device-height);
+      background: #0b1220; /* bezel color */
+      border-radius: 18px;
+      box-shadow: 0 18px 60px rgba(9,18,25,0.45);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: var(--bezel);
+      box-sizing: border-box;
+    }
+
+    /* Screen area inside bezel */
+    .screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      background: var(--bg-light-blue);
+      box-sizing: border-box;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      border: 1px solid rgba(7,41,61,0.06);
+    }
+
+    /* Header (small bar at top of screen) */
+    .header {
+      height: 48px;
+      min-height:48px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:8px 12px;
+      box-sizing:border-box;
+      background: rgba(255,255,255,0.40);
+      color: var(--tile-text);
+      font-weight:600;
+      letter-spacing:0.3px;
+    }
+
+    .header .title { font-size:16px; }
+    .header .status { font-size:13px; color:var(--muted); }
+
+    /* Main content fills remaining screen */
+    .content {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      padding: calc(var(--menu-padding));
+      box-sizing:border-box;
+      gap: 8px;
+    }
+
+    /* Active region - directly below the header and above the menu */
+    .active-region {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      justify-content:center;
+      gap:4px;
+      padding:8px 10px;
+      background: rgba(255,255,255,0.6);
+      border-radius:8px;
+      width:100%;
+      box-sizing:border-box;
+      border: 1px solid rgba(7,41,61,0.04);
+    }
+
+    .active-title {
+      font-size: 11pt;
+      font-weight:700;
+      color: var(--tile-text);
+      margin:0;
+    }
+
+    /* Day name must be 15 point font as requested */
+    .day {
+      font-size: 15pt; /* 15 point font */
+      font-weight:700;
+      color: var(--tile-text);
+      margin:0;
+      line-height:1;
+    }
+
+    .date {
+      font-size: 11pt;
+      color: var(--muted);
+    }
+
+    .time {
+      font-size: 12.5pt;
+      font-weight:700;
+      color: var(--tile-text);
+    }
+
+    /* MAIN MENU GRID - 2 columns x 3 rows; tiles stretch to fill cells */
+    .main-menu {
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: var(--gap);
+      width:100%;
+      height:100%;
+      align-items:stretch;
+      justify-items:stretch;
+      box-sizing:border-box;
+    }
+
+    /* Tiles fill grid cells and maximize touch area */
+    .tile {
+      background: var(--tile-bg);
+      color: var(--tile-text);
+      border-radius: 12px;
+      border: 1px solid rgba(7,41,61,0.06);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding: 10px;
+      box-sizing:border-box;
+      cursor:pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+    }
+    .tile:active { transform: translateY(2px); }
+    .tile:focus { outline: 3px solid rgba(31,182,255,0.18); outline-offset: -3px; }
+
+    .icon {
+      width:40%;
+      height:40%;
+      max-width:140px;
+      max-height:140px;
+      margin-bottom:8px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .label { font-size:15px; font-weight:700; color:var(--tile-text); }
+
+    /* Secondary views — appear inside the same screen (stacked content) */
+    .view {
+      display:none;
+      flex-direction:column;
+      gap:12px;
+      padding:12px;
+      box-sizing:border-box;
+      background: rgba(255,255,255,0.85);
+      border-radius:10px;
+      height:100%;
+      overflow:auto;
+      color:var(--tile-text);
+    }
+    .view.active { display:flex; }
+
+    .view-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .back-btn { padding:8px 12px; border-radius:8px; border:1px solid rgba(7,41,61,0.06); background:transparent; cursor:pointer; }
+
+    /* Utility styles for the demo */
+    .packet { width:80%; max-width:420px; height:110px; border-radius:10px; background: linear-gradient(180deg,#fffde3,#fff9b8); display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--tile-text); border:1px solid rgba(7,41,61,0.06); }
+    .progress { width:90%; height:14px; background: rgba(7,41,61,0.04); border-radius:8px; overflow:hidden; }
+    .progress .bar { height:100%; width:0%; background: linear-gradient(90deg,var(--accent), #6be7ff); border-radius:8px; transition: width 300ms linear; }
+
+    .pill-btn { padding:10px 14px; border-radius:10px; border:none; background: var(--tile-text); color: var(--bg-light-blue); font-weight:700; cursor:pointer; }
+
+    /* If the browser does not map CSS inches to physical inches exactly, you can change the device size in pixels here:
+       .device { width: 460.8px; height: 614.4px; }  (4.8in*96 and 6.4in*96)
+       Inch units are retained to better represent the physical target. */
+
+    /* Very small windows: scale device down to fit */
+    @media (max-width:520px) {
+      .device { transform: scale(0.8); transform-origin: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="device" role="application" aria-label="Simulated 8 inch tablet">
+    <div class="screen">
+      <div class="header">
+        <div class="title">TelePack</div>
+        <div class="status" aria-live="polite">Ready</div>
+      </div>
+
+      <div class="content">
+        <!-- ACTIVE REGION: Title + Day/Date/Time (dynamic) -->
+        <div class="active-region" aria-live="polite" aria-atomic="true">
+          <div class="active-title"></div>
+          <div style="display:flex;flex-direction:row;align-items:baseline;gap:10px;">
+            <div class="day" id="dayName">Thursday</div>
+            <div class="date" id="dateStr">Jan 16, 2026</div>
+            <div class="time" id="timeStr">12:00 PM</div>
+          </div>
+        </div>
+
+        <!-- MAIN MENU (fills the remainder of the simulated device screen) -->
+        <section id="menuView" class="main-menu" aria-label="Main menu">
+          <div class="tile" role="button" tabindex="0" data-view="dispenseView" title="Dispense">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"></rect><path d="M2.5 9h19"></path><path d="M8 2v4"></path></svg>
+            </div>
+            <div class="label">Dispense</div>
+          </div>
+
+          <div class="tile" role="button" tabindex="0" data-view="assistantView" title="Medication Assistant">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10a5 5 0 0 1 10 0"></path></svg>
+            </div>
+            <div class="label">Medication Assistant</div>
+          </div>
+
+          <div class="tile" role="button" tabindex="0" data-view="mediaView" title="Media">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"></rect><polygon points="7 14 12 10 17 14 12 18 7 14"></polygon></svg>
+            </div>
+            <div class="label">Media</div>
+          </div>
+
+          <div class="tile" role="button" tabindex="0" data-view="videoView" title="Video Call">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="15" height="14" rx="2"></rect><path d="M23 7l-6 5v-4l6-5z"></path></svg>
+            </div>
+            <div class="label">Video Call</div>
+          </div>
+
+          <div class="tile" role="button" tabindex="0" data-view="settingsView" title="Settings">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 2.3 16.88l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82L4.3 3.3A2 2 0 1 1 7.13.47l.06.06a1.65 1.65 0 0 0 1.82.33h.06A1.65 1.65 0 0 0 11 1.35V1a2 2 0 1 1 4 0v.35c.25.1.48.26.68.45.2.2.36.43.45.68h.06a1.65 1.65 0 0 0 1.82.33l.06-.06A2 2 0 1 1 21.7 7.12l-.06.06a1.65 1.65 0 0 0-.33 1.82v.06c.12.41.12.86 0 1.27z"></path></svg>
+            </div>
+            <div class="label">Settings</div>
+          </div>
+
+          <!-- empty cell to keep 2x3 layout balanced -->
+          <div style="visibility:hidden"></div>
+        </section>
+
+        <!-- Secondary views are hidden until a tile is tapped -->
+        <section id="dispenseView" class="view" aria-hidden="true">
+          <div class="view-header"><strong>Dispense Medication</strong><button class="back-btn" data-action="back">Back</button></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+            <div class="packet" id="packetBox">Medication Packet</div>
+            <div class="progress" aria-hidden="false"><div class="bar" id="dispenseBar" style="width:0%"></div></div>
+            <div class="message" id="dispenseMsg">Tap "Start" to dispense packet.</div>
+            <div style="display:flex;gap:12px;margin-top:6px;"><button class="pill-btn" id="startDispense">Start</button><button class="pill-btn" id="cancelDispense" style="background:var(--danger)">Cancel</button></div>
+          </div>
+        </section>
+
+        <section id="assistantView" class="view" aria-hidden="true">
+          <div class="view-header"><strong>Medication Assistant</strong><button class="back-btn" data-action="back">Back</button></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(7,41,61,0.03)"><div><div style="font-weight:700">Lisinopril 10 mg</div><div style="color:var(--muted);font-size:13px">Next: Today • 08:00</div></div><button class="pill-btn" data-action="taken" data-med="Lisinopril">Mark Taken</button></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(7,41,61,0.03)"><div><div style="font-weight:700">Metformin 500 mg</div><div style="color:var(--muted);font-size:13px">Next: Today • 12:00</div></div><button class="pill-btn" data-action="taken" data-med="Metformin">Mark Taken</button></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(7,41,61,0.03)"><div><div style="font-weight:700">Atorvastatin 20 mg</div><div style="color:var(--muted);font-size:13px">Next: Tonight • 21:00</div></div><button class="pill-btn" data-action="details" data-med="Atorvastatin">Info</button></div>
+          </div>
+        </section>
+
+        <section id="mediaView" class="view" aria-hidden="true">
+          <div class="view-header"><strong>Media</strong><button class="back-btn" data-action="back">Back</button></div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+            <div style="background:rgba(7,41,61,0.03);border-radius:8px;padding:8px;text-align:center;"><div style="height:120px;background:linear-gradient(90deg,#eaf6ff,#fff9b8);border-radius:6px"></div><div style="margin-top:8px;font-weight:700">Intro Video</div></div>
+            <div style="background:rgba(7,41,61,0.03);border-radius:8px;padding:8px;text-align:center;"><div style="height:120px;background:linear-gradient(90deg,#eaf6ff,#fff9b8);border-radius:6px"></div><div style="margin-top:8px;font-weight:700">Patient Guide</div></div>
+          </div>
+        </section>
+
+        <section id="videoView" class="view" aria-hidden="true">
+          <div class="view-header"><strong>Video Call</strong><button class="back-btn" data-action="back">Back</button></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+            <div style="width:90%;height:220px;background:rgba(7,41,61,0.03);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+              <div id="videoHint" style="color:var(--muted);text-align:center;padding:12px">Tap Start to allow camera and preview video call.</div>
+              <video id="localVideo" autoplay playsinline muted style="display:none;width:100%;height:100%;object-fit:cover;border-radius:8px"></video>
+            </div>
+            <div style="display:flex;gap:10px"><button class="pill-btn" id="startCall">Start</button><button class="pill-btn" id="endCall" style="background:var(--danger)">End</button></div>
+            <div class="message" id="callMsg"></div>
+          </div>
+        </section>
+
+        <section id="settingsView" class="view" aria-hidden="true">
+          <div class="view-header"><strong>Settings</strong><button class="back-btn" data-action="back">Back</button></div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(7,41,61,0.03)"><div><div style="font-weight:700">Volume</div><div style="color:var(--muted);font-size:13px">Adjust audio volume</div></div><input type="range" id="volumeRange" min="0" max="100" value="80"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(7,41,61,0.03)"><div><div style="font-weight:700">Auto-brightness</div><div style="color:var(--muted);font-size:13px">Simulate brightness</div></div><div id="brightnessToggle" role="switch" aria-checked="false" style="width:50px;height:28px;border-radius:999px;background:rgba(7,41,61,0.04);position:relative;cursor:pointer;"><div class="knob" style="position:absolute;width:22px;height:22px;border-radius:50%;top:3px;left:3px;background:white;transition:left 160ms;"></div></div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(7,41,61,0.03)"><div><div style="font-weight:700">Language</div><div style="color:var(--muted);font-size:13px">Select UI language</div></div><select id="languageSelect"><option>English</option><option>Español</option><option>Français</option></select></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Navigation + simple interactions and dynamic active-region clock
+    (function(){
+      const tiles = document.querySelectorAll('.tile');
+      const views = document.querySelectorAll('.view');
+      const status = document.querySelector('.status');
+
+      function showView(viewId){
+        if(!viewId){
+          document.getElementById('menuView').style.display = '';
+          views.forEach(v => { v.classList.remove('active'); v.setAttribute('aria-hidden','true'); });
+          status.textContent = 'Ready';
+          return;
+        }
+        document.getElementById('menuView').style.display = 'none';
+        views.forEach(v => {
+          if(v.id === viewId){
+            v.classList.add('active');
+            v.setAttribute('aria-hidden','false');
+          } else {
+            v.classList.remove('active');
+            v.setAttribute('aria-hidden','true');
+          }
+        });
+        const titleEl = document.querySelector('#' + viewId + ' .view-header strong');
+        status.textContent = titleEl ? titleEl.textContent : 'Busy';
+      }
+
+      tiles.forEach(t => {
+        const view = t.getAttribute('data-view');
+        t.addEventListener('click', () => showView(view));
+        t.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showView(view); } });
+      });
+
+      document.querySelectorAll('[data-action="back"]').forEach(btn => btn.addEventListener('click', () => showView(null)));
+
+      // --- Dispense logic (simulated) ---
+      const startBtn = document.getElementById('startDispense');
+      const cancelBtn = document.getElementById('cancelDispense');
+      const bar = document.getElementById('dispenseBar');
+      const msg = document.getElementById('dispenseMsg');
+      let dispenseTimer = null;
+      startBtn && startBtn.addEventListener('click', () => {
+        clearInterval(dispenseTimer);
+        bar.style.width = '0%';
+        msg.textContent = 'Dispensing...';
+        let progress = 0;
+        dispenseTimer = setInterval(() => {
+          progress += Math.random() * 18 + 6;
+          if(progress >= 100){
+            progress = 100;
+            bar.style.width = '100%';
+            msg.textContent = 'Dispense complete. Please collect packet.';
+            clearInterval(dispenseTimer);
+          } else {
+            bar.style.width = progress + '%';
+          }
+        }, 600);
+      });
+      cancelBtn && cancelBtn.addEventListener('click', () => {
+        clearInterval(dispenseTimer);
+        bar.style.width = '0%';
+        msg.textContent = 'Dispense canceled.';
+      });
+
+      // --- Assistant actions ---
+      document.querySelectorAll('[data-action="taken"]').forEach(b => {
+        b.addEventListener('click', () => {
+          b.textContent = 'Taken ✓';
+          b.disabled = true;
+          b.style.background = 'linear-gradient(90deg,#28c76f,#6be7ff)';
+          b.style.color = '#021325';
+        });
+      });
+
+      document.querySelectorAll('[data-action="details"]').forEach(b => {
+        b.addEventListener('click', () => {
+          const med = b.getAttribute('data-med');
+          alert('Details for ' + med + '\\nDosage and instructions can be shown here.');
+        });
+      });
+
+      // --- Media and video placeholders ---
+      document.querySelectorAll('[data-action="play-audio"]').forEach(b => {
+        b.addEventListener('click', () => alert('Playing reminder audio (replace with real audio file).'));
+      });
+
+      const startCall = document.getElementById('startCall');
+      const endCall = document.getElementById('endCall');
+      const localVideo = document.getElementById('localVideo');
+      const videoHint = document.getElementById('videoHint');
+      let stream = null;
+      async function startVideoPreview(){
+        try {
+          videoHint.style.display = 'none';
+          localVideo.style.display = '';
+          stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}, audio:true});
+          localVideo.srcObject = stream;
+          document.getElementById('callMsg').textContent = 'Local preview active.';
+        } catch(err){
+          videoHint.style.display = '';
+          localVideo.style.display = 'none';
+          document.getElementById('callMsg').textContent = 'Camera not available or permission denied.';
+        }
+      }
+      function stopVideoPreview(){
+        if(stream) stream.getTracks().forEach(t => t.stop());
+        stream = null;
+        localVideo.srcObject = null;
+        localVideo.style.display = 'none';
+        videoHint.style.display = '';
+        document.getElementById('callMsg').textContent = '';
+      }
+      startCall && startCall.addEventListener('click', startVideoPreview);
+      endCall && endCall.addEventListener('click', stopVideoPreview);
+
+      // Settings interactions
+      const brightnessToggle = document.getElementById('brightnessToggle');
+      brightnessToggle && brightnessToggle.addEventListener('click', () => {
+        const on = brightnessToggle.classList.toggle('on');
+        brightnessToggle.setAttribute('aria-checked', on ? 'true' : 'false');
+        const knob = brightnessToggle.querySelector('.knob');
+        if(knob) knob.style.left = on ? '25px' : '3px';
+        document.documentElement.style.filter = on ? 'brightness(1.06)' : '';
+      });
+
+      const volumeRange = document.getElementById('volumeRange');
+      volumeRange && volumeRange.addEventListener('input', (e) => {
+        const value = e.target.value;
+        status.textContent = 'Volume: ' + value + '%';
+        clearTimeout(status._t);
+        status._t = setTimeout(() => { status.textContent = document.querySelector('.view.active strong') ? document.querySelector('.view.active strong').textContent : 'Ready'; }, 1200);
+      });
+
+      // initial focus and keyboard nav
+      tiles[0] && tiles[0].focus();
+      document.addEventListener('keydown', function(e){ if(e.key === 'Escape') showView(null); });
+
+      // Expose for debugging
+      window.telepack = { showView };
+
+      // --- Active-region: day / date / time update ---
+      const dayEl = document.getElementById('dayName');
+      const dateEl = document.getElementById('dateStr');
+      const timeEl = document.getElementById('timeStr');
+
+      function updateDateTime(now){
+        // Day name (e.g., Thursday)
+        const dayName = now.toLocaleDateString(undefined, { weekday: 'long' });
+        // Date (e.g., Jan 16, 2026)
+        const dateStr = now.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        // Time with AM/PM (e.g., 3:04 PM)
+        const timeStr = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+
+        if(dayEl) dayEl.textContent = dayName;
+        if(dateEl) dateEl.textContent = dateStr;
+        if(timeEl) timeEl.textContent = timeStr;
+      }
+
+      // Initial set and tick every second for up-to-date time (updates minute/AMPM as needed)
+      updateDateTime(new Date());
+      setInterval(() => updateDateTime(new Date()), 1000);
+    })();
+  </script>
+</body>
+</html>
