@@ -52,7 +52,25 @@
       justify-content:center;
       padding: var(--bezel);
       box-sizing: border-box;
+      transition: width 220ms ease, height 220ms ease, padding 220ms ease, border-radius 220ms ease, box-shadow 220ms ease;
     }
+
+    /* Maximized state: make the device fill the viewport so the UI fits the tablet display */
+    .device.maximized {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      padding: 0;
+      border-radius: 0;
+      box-shadow: none;
+      z-index: 9999;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+    .device.maximized .screen { border-radius: 0; }
 
     /* Screen area inside bezel */
     .screen {
@@ -80,8 +98,22 @@
       letter-spacing:0.3px;
     }
     .header .title { font-size:16px; }
-    /* status remains present but starts empty (no "Ready") */
+    /* container for status + controls on the right */
+    .header .controls { display:flex; align-items:center; gap:8px; }
     .header .status { font-size:13px; color:var(--muted); }
+
+    /* Full/Back button in header */
+    .header .full-btn {
+      padding:6px 10px;
+      border-radius:8px;
+      border:1px solid rgba(7,41,61,0.06);
+      background: var(--tile-bg);
+      color: var(--tile-text);
+      cursor:pointer;
+      font-weight:700;
+      font-size:13px;
+    }
+    .header .full-btn:active { transform: translateY(1px); }
 
     /* Main content */
     .content {
@@ -190,7 +222,7 @@
     <div class="screen">
       <div class="header">
         <div class="title">Telepack</div>
-        <div class="status" aria-live="polite"></div>
+        <div class="controls"><div class="status" aria-live="polite"></div><button id="fullBtn" class="full-btn" aria-pressed="false" title="Maximize">Full</button></div>
       </div>
 
       <div class="content">
@@ -269,8 +301,8 @@
         <section id="mediaView" class="view" aria-hidden="true">
           <div class="view-header"><strong>Media</strong><button class="back-btn" data-action="back">Back</button></div>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-            <div style="background:rgba(7,41,61,0.03);border-radius:8px;padding:8px;text-align:center;"><div style="height:120px;background:linear-gradient(90deg,#eaf6ff,#fff9b8);border-radius:6px"></div><div style="margin-top:8px;font-weight:700">Intro Video</div></div>
-            <div style="background:rgba(7,41,61,0.03);border-radius:8px;padding:8px;text-align:center;"><div style="height:120px;background:linear-gradient(90deg,#eaf6ff,#fff9b8);border-radius:6px"></div><div style="margin-top:8px;font-weight:700">Patient Guide</div></div>
+            <div style="background:rgba(7,41,61,0.03);border-radius:8px;padding:8px;text-align:center;"><div style="height:120px;background:linear-gradient(90deg,#eaf6ff,#fff9b8);border-radius:6px;margin-bottom:8px"></div><button class="pill-btn" data-action="play-audio">Play</button></div>
+            <div style="background:rgba(7,41,61,0.03);border-radius:8px;padding:8px;text-align:center;"><div style="height:120px;background:linear-gradient(90deg,#eaf6ff,#fff9b8);border-radius:6px;margin-bottom:8px"></div><button class="pill-btn" data-action="play-audio">Play</button></div>
           </div>
         </section>
 
@@ -290,7 +322,7 @@
           <div class="view-header"><strong>Settings</strong><button class="back-btn" data-action="back">Back</button></div>
           <div style="display:flex;flex-direction:column;gap:10px">
             <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(7,41,61,0.03)"><div><div style="font-weight:700">Volume</div><div style="color:var(--muted);font-size:13px">Adjust audio volume</div></div><input type="range" id="volumeRange" min="0" max="100" value="80"></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(7,41,61,0.03)"><div><div style="font-weight:700">Auto-brightness</div><div style="color:var(--muted);font-size:13px">Simulate brightness</div></div><div id="brightnessToggle" role="switch" aria-checked="false" style="width:50px;height:28px;border-radius:999px;background:rgba(7,41,61,0.04);position:relative;cursor:pointer;"><div class="knob" style="position:absolute;width:22px;height:22px;border-radius:50%;top:3px;left:3px;background:white;transition:left 160ms;"></div></div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(7,41,61,0.03)"><div><div style="font-weight:700">Auto-brightness</div><div style="color:var(--muted);font-size:13px">Toggle adaptive brightness</div></div><div id="brightnessToggle" role="switch" aria-checked="false" style="width:48px;height:26px;border-radius:14px;background:#fff;border:1px solid rgba(7,41,61,0.06);position:relative;cursor:pointer"><div class="knob" style="width:20px;height:20px;border-radius:10px;background:var(--tile-text);position:absolute;left:3px;top:3px;transition:left 180ms ease"></div></div></div>
             <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:rgba(7,41,61,0.03)"><div><div style="font-weight:700">Language</div><div style="color:var(--muted);font-size:13px">Select UI language</div></div><select id="languageSelect"><option>English</option><option>Español</option><option>Français</option></select></div>
           </div>
         </section>
@@ -457,6 +489,24 @@
 
       updateDateTime(new Date());
       setInterval(() => updateDateTime(new Date()), 1000);
+
+      // --- Fullscreen / maximize control ---
+      const deviceEl = document.querySelector('.device');
+      const fullBtn = document.getElementById('fullBtn');
+      if(deviceEl && fullBtn){
+        function setMaximized(on){
+          deviceEl.classList.toggle('maximized', on);
+          fullBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+          fullBtn.textContent = on ? 'Back' : 'Full';
+          // When maximized, keep the menu visible and clear transient status text
+          if(on){
+            try{ document.getElementById('menuView').style.display = ''; }catch(e){}
+            if(status) status.textContent = '';
+          }
+        }
+        fullBtn.addEventListener('click', () => setMaximized(!deviceEl.classList.contains('maximized')));
+        document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && deviceEl.classList.contains('maximized')) setMaximized(false); });
+      }
     })();
   </script>
 </body>
