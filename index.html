@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Telepack — 8" Tablet Portrait Prototype</title>
+  <title>Telepack — 8" Tablet Portrait Prototype (All Buttons Fit)</title>
 
   <style>
     /* Colors and spacing */
@@ -15,8 +15,7 @@
       --accent: #1fb6ff;
       --danger: #ff6b6b;
 
-      /* Physical sizing for an 8" tablet (portrait) with 4:3 aspect ratio:
-         portrait width = 4.8in, height = 6.4in to simulate physical size in browser */
+      /* Physical sizing for an 8" tablet (portrait) */
       --device-width: 4.8in;
       --device-height: 6.4in;
 
@@ -30,7 +29,7 @@
     html,body {
       height:100%;
       margin:0;
-      background: #e9edf0; /* neutral page background so the device stands out */
+      background: #e9edf0;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
       -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing:grayscale;
@@ -68,25 +67,23 @@
       border: 1px solid rgba(7,41,61,0.06);
     }
 
-    /* Header (small bar at top of screen) */
+    /* Header */
     .header {
       height: 48px;
-      min-height:48px;
       display:flex;
       align-items:center;
       justify-content:space-between;
       padding:8px 12px;
-      box-sizing:border-box;
       background: rgba(255,255,255,0.40);
       color: var(--tile-text);
       font-weight:600;
       letter-spacing:0.3px;
     }
-
     .header .title { font-size:16px; }
+    /* status remains present but starts empty (no "Ready") */
     .header .status { font-size:13px; color:var(--muted); }
 
-    /* Main content fills remaining screen */
+    /* Main content */
     .content {
       flex:1;
       display:flex;
@@ -94,9 +91,10 @@
       padding: calc(var(--menu-padding));
       box-sizing:border-box;
       gap: 8px;
+      min-height: 0;
     }
 
-    /* Active region - directly below the header and above the menu */
+    /* Active region (title removed per request) */
     .active-region {
       display:flex;
       flex-direction:column;
@@ -109,49 +107,28 @@
       width:100%;
       box-sizing:border-box;
       border: 1px solid rgba(7,41,61,0.04);
+      flex: 0 0 auto;
     }
 
-    .active-title {
-      font-size: 11pt;
-      font-weight:700;
-      color: var(--tile-text);
-      margin:0;
-    }
+    /* Day/name/date/time */
+    .day { font-size: 15pt; font-weight:700; color: var(--tile-text); margin:0; line-height:1; }
+    .date { font-size: 11pt; color: var(--muted); }
+    .time { font-size: 12.5pt; font-weight:700; color: var(--tile-text); }
 
-    /* Day name must be 15 point font as requested */
-    .day {
-      font-size: 15pt; /* 15 point font */
-      font-weight:700;
-      color: var(--tile-text);
-      margin:0;
-      line-height:1;
-    }
-
-    .date {
-      font-size: 11pt;
-      color: var(--muted);
-    }
-
-    .time {
-      font-size: 12.5pt;
-      font-weight:700;
-      color: var(--tile-text);
-    }
-
-    /* MAIN MENU GRID - 2 columns x 3 rows; tiles stretch to fill cells */
+    /* MAIN MENU GRID */
     .main-menu {
       display:grid;
       grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(3, 1fr);
+      grid-template-rows: 0.85fr 1fr 1fr;
       gap: var(--gap);
       width:100%;
       height:100%;
       align-items:stretch;
       justify-items:stretch;
       box-sizing:border-box;
+      min-height: 0;
     }
 
-    /* Tiles fill grid cells and maximize touch area */
     .tile {
       background: var(--tile-bg);
       color: var(--tile-text);
@@ -162,58 +139,47 @@
       align-items:center;
       justify-content:center;
       text-align:center;
-      padding: 10px;
+      padding: 8px;
       box-sizing:border-box;
       cursor:pointer;
       transition: transform 120ms ease, box-shadow 120ms ease;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
+      min-height: 0;
     }
     .tile:active { transform: translateY(2px); }
     .tile:focus { outline: 3px solid rgba(31,182,255,0.18); outline-offset: -3px; }
 
-    .icon {
-      width:40%;
-      height:40%;
-      max-width:140px;
-      max-height:140px;
-      margin-bottom:8px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .label { font-size:15px; font-weight:700; color:var(--tile-text); }
+    .tile.dispense { grid-column: 1 / -1; padding: 12px; }
+    .tile.dispense .label { font-size:16px; }
 
-    /* Secondary views — appear inside the same screen (stacked content) */
-    .view {
-      display:none;
-      flex-direction:column;
-      gap:12px;
-      padding:12px;
-      box-sizing:border-box;
-      background: rgba(255,255,255,0.85);
-      border-radius:10px;
-      height:100%;
-      overflow:auto;
-      color:var(--tile-text);
-    }
+    .tile.small { aspect-ratio: 1 / 1; width: 100%; height: 100%; min-height: 0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+
+    .icon { width:36%; height:36%; max-width:110px; max-height:110px; margin-bottom:8px; display:inline-flex; align-items:center; justify-content:center; }
+    .label { font-size:14px; font-weight:700; color:var(--tile-text); }
+
+    /* Secondary views */
+    .view { display:none; flex-direction:column; gap:12px; padding:12px; box-sizing:border-box; background: rgba(255,255,255,0.85); border-radius:10px; height:100%; overflow:auto; color:var(--tile-text); }
     .view.active { display:flex; }
-
     .view-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-    .back-btn { padding:8px 12px; border-radius:8px; border:1px solid rgba(7,41,61,0.06); background:transparent; cursor:pointer; }
 
-    /* Utility styles for the demo */
-    .packet { width:80%; max-width:420px; height:110px; border-radius:10px; background: linear-gradient(180deg,#fffde3,#fff9b8); display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--tile-text); border:1px solid rgba(7,41,61,0.06); }
+    .back-btn {
+      padding:8px 12px;
+      border-radius:8px;
+      border:1px solid rgba(7,41,61,0.06);
+      background: var(--tile-bg); /* yellow */
+      color: var(--tile-text);
+      cursor:pointer;
+      font-weight:700;
+    }
+    .back-btn:active { transform: translateY(1px); }
+
+    .packet { width:80%; max-width:420px; height:100px; border-radius:10px; background: linear-gradient(180deg,#fffde3,#fff9b8); display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--tile-text); border:1px solid rgba(7,41,61,0.06); }
     .progress { width:90%; height:14px; background: rgba(7,41,61,0.04); border-radius:8px; overflow:hidden; }
     .progress .bar { height:100%; width:0%; background: linear-gradient(90deg,var(--accent), #6be7ff); border-radius:8px; transition: width 300ms linear; }
 
     .pill-btn { padding:10px 14px; border-radius:10px; border:none; background: var(--tile-text); color: var(--bg-light-blue); font-weight:700; cursor:pointer; }
 
-    /* If the browser does not map CSS inches to physical inches exactly, you can change the device size in pixels here:
-       .device { width: 460.8px; height: 614.4px; }  (4.8in*96 and 6.4in*96)
-       Inch units are retained to better represent the physical target. */
-
-    /* Very small windows: scale device down to fit */
     @media (max-width:520px) {
       .device { transform: scale(0.8); transform-origin: center; }
     }
@@ -223,14 +189,13 @@
   <div class="device" role="application" aria-label="Simulated 8 inch tablet">
     <div class="screen">
       <div class="header">
-        <div class="title">TelePack</div>
-        <div class="status" aria-live="polite">Ready</div>
+        <div class="title">Telepack</div>
+        <div class="status" aria-live="polite"></div>
       </div>
 
       <div class="content">
-        <!-- ACTIVE REGION: Title + Day/Date/Time (dynamic) -->
+        <!-- ACTIVE REGION: day/date/time only (title removed as requested) -->
         <div class="active-region" aria-live="polite" aria-atomic="true">
-          <div class="active-title"></div>
           <div style="display:flex;flex-direction:row;align-items:baseline;gap:10px;">
             <div class="day" id="dayName">Thursday</div>
             <div class="date" id="dateStr">Jan 16, 2026</div>
@@ -238,48 +203,50 @@
           </div>
         </div>
 
-        <!-- MAIN MENU (fills the remainder of the simulated device screen) -->
+        <!-- MAIN MENU -->
         <section id="menuView" class="main-menu" aria-label="Main menu">
-          <div class="tile" role="button" tabindex="0" data-view="dispenseView" title="Dispense">
-            <div class="icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"></rect><path d="M2.5 9h19"></path><path d="M8 2v4"></path></svg>
+          <div class="tile dispense" role="button" tabindex="0" data-view="dispenseView" title="Dispense">
+            <div style="display:flex;flex-direction:row;align-items:center;gap:10px;">
+              <div style="width:60px;height:60px;display:flex;align-items:center;justify-content:center;">
+                <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"></rect><path d="M2.5 9h19"></path><path d="M8 2v4"></path></svg>
+              </div>
+              <div style="text-align:left;">
+                <div style="font-size:16px;font-weight:800;color:var(--tile-text);">Dispense Medication</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:4px;">Tap to dispense the next medication packet</div>
+              </div>
             </div>
-            <div class="label">Dispense</div>
           </div>
 
-          <div class="tile" role="button" tabindex="0" data-view="assistantView" title="Medication Assistant">
+          <div class="tile small" role="button" tabindex="0" data-view="assistantView" title="Medication Assistant">
             <div class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10a5 5 0 0 1 10 0"></path></svg>
             </div>
             <div class="label">Medication Assistant</div>
           </div>
 
-          <div class="tile" role="button" tabindex="0" data-view="mediaView" title="Media">
+          <div class="tile small" role="button" tabindex="0" data-view="mediaView" title="Media">
             <div class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"></rect><polygon points="7 14 12 10 17 14 12 18 7 14"></polygon></svg>
             </div>
             <div class="label">Media</div>
           </div>
 
-          <div class="tile" role="button" tabindex="0" data-view="videoView" title="Video Call">
+          <div class="tile small" role="button" tabindex="0" data-view="videoView" title="Video Call">
             <div class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="15" height="14" rx="2"></rect><path d="M23 7l-6 5v-4l6-5z"></path></svg>
             </div>
             <div class="label">Video Call</div>
           </div>
 
-          <div class="tile" role="button" tabindex="0" data-view="settingsView" title="Settings">
+          <div class="tile small" role="button" tabindex="0" data-view="settingsView" title="Settings">
             <div class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="var(--tile-text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 2.3 16.88l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82L4.3 3.3A2 2 0 1 1 7.13.47l.06.06a1.65 1.65 0 0 0 1.82.33h.06A1.65 1.65 0 0 0 11 1.35V1a2 2 0 1 1 4 0v.35c.25.1.48.26.68.45.2.2.36.43.45.68h.06a1.65 1.65 0 0 0 1.82.33l.06-.06A2 2 0 1 1 21.7 7.12l-.06.06a1.65 1.65 0 0 0-.33 1.82v.06c.12.41.12.86 0 1.27z"></path></svg>
             </div>
             <div class="label">Settings</div>
           </div>
-
-          <!-- empty cell to keep 2x3 layout balanced -->
-          <div style="visibility:hidden"></div>
         </section>
 
-        <!-- Secondary views are hidden until a tile is tapped -->
+        <!-- Secondary views -->
         <section id="dispenseView" class="view" aria-hidden="true">
           <div class="view-header"><strong>Dispense Medication</strong><button class="back-btn" data-action="back">Back</button></div>
           <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
@@ -342,7 +309,8 @@
         if(!viewId){
           document.getElementById('menuView').style.display = '';
           views.forEach(v => { v.classList.remove('active'); v.setAttribute('aria-hidden','true'); });
-          status.textContent = 'Ready';
+          // status left empty per request
+          if(status) status.textContent = '';
           return;
         }
         document.getElementById('menuView').style.display = 'none';
@@ -356,7 +324,7 @@
           }
         });
         const titleEl = document.querySelector('#' + viewId + ' .view-header strong');
-        status.textContent = titleEl ? titleEl.textContent : 'Busy';
+        if(status) status.textContent = titleEl ? titleEl.textContent : '';
       }
 
       tiles.forEach(t => {
@@ -409,7 +377,7 @@
       document.querySelectorAll('[data-action="details"]').forEach(b => {
         b.addEventListener('click', () => {
           const med = b.getAttribute('data-med');
-          alert('Details for ' + med + '\\nDosage and instructions can be shown here.');
+          alert('Details for ' + med + '\nDosage and instructions can be shown here.');
         });
       });
 
@@ -429,11 +397,11 @@
           localVideo.style.display = '';
           stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}, audio:true});
           localVideo.srcObject = stream;
-          document.getElementById('callMsg').textContent = 'Local preview active.';
+          if(status) status.textContent = 'Local preview active.';
         } catch(err){
           videoHint.style.display = '';
           localVideo.style.display = 'none';
-          document.getElementById('callMsg').textContent = 'Camera not available or permission denied.';
+          if(status) status.textContent = 'Camera not available or permission denied.';
         }
       }
       function stopVideoPreview(){
@@ -442,7 +410,7 @@
         localVideo.srcObject = null;
         localVideo.style.display = 'none';
         videoHint.style.display = '';
-        document.getElementById('callMsg').textContent = '';
+        if(status) status.textContent = '';
       }
       startCall && startCall.addEventListener('click', startVideoPreview);
       endCall && endCall.addEventListener('click', stopVideoPreview);
@@ -460,9 +428,9 @@
       const volumeRange = document.getElementById('volumeRange');
       volumeRange && volumeRange.addEventListener('input', (e) => {
         const value = e.target.value;
-        status.textContent = 'Volume: ' + value + '%';
+        if(status) status.textContent = 'Volume: ' + value + '%';
         clearTimeout(status._t);
-        status._t = setTimeout(() => { status.textContent = document.querySelector('.view.active strong') ? document.querySelector('.view.active strong').textContent : 'Ready'; }, 1200);
+        status._t = setTimeout(() => { if(status) status.textContent = document.querySelector('.view.active strong') ? document.querySelector('.view.active strong').textContent : ''; }, 1200);
       });
 
       // initial focus and keyboard nav
@@ -478,11 +446,8 @@
       const timeEl = document.getElementById('timeStr');
 
       function updateDateTime(now){
-        // Day name (e.g., Thursday)
         const dayName = now.toLocaleDateString(undefined, { weekday: 'long' });
-        // Date (e.g., Jan 16, 2026)
         const dateStr = now.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-        // Time with AM/PM (e.g., 3:04 PM)
         const timeStr = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
 
         if(dayEl) dayEl.textContent = dayName;
@@ -490,7 +455,6 @@
         if(timeEl) timeEl.textContent = timeStr;
       }
 
-      // Initial set and tick every second for up-to-date time (updates minute/AMPM as needed)
       updateDateTime(new Date());
       setInterval(() => updateDateTime(new Date()), 1000);
     })();
